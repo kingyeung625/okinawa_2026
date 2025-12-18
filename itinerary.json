@@ -2,37 +2,33 @@
   {
     "day": 1,
     "name": "那霸機場 (取車)",
-    "lat": 26.2064,
-    "lng": 127.6465,
+    "lat": 26.2064, "lng": 127.6465,
     "mapcode": "33 123 456*78",
-    "type": "Transport",
+    "type": "交通",
     "budget": "¥0"
   },
   {
     "day": 1,
     "name": "瀨長島 Umikaji Terrace",
-    "lat": 26.1745,
-    "lng": 127.6462,
+    "lat": 26.1745, "lng": 127.6462,
     "mapcode": "33 002 602*06",
-    "type": "Sightseeing",
+    "type": "景點",
     "budget": "¥2,000"
   },
   {
     "day": 2,
     "name": "萬座毛",
-    "lat": 26.5050,
-    "lng": 127.8501,
+    "lat": 26.5050, "lng": 127.8501,
     "mapcode": "206 312 038*55",
-    "type": "Sightseeing",
+    "type": "景點",
     "budget": "¥100"
   },
   {
     "day": 3,
     "name": "今歸仁城跡 (賞櫻)",
-    "lat": 26.6917,
-    "lng": 127.9295,
+    "lat": 26.6917, "lng": 127.9295,
     "mapcode": "553 081 414*17",
-    "type": "Sightseeing",
+    "type": "景點",
     "budget": "¥600"
   }
 ]
