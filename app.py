@@ -4,96 +4,116 @@ import folium
 from streamlit_folium import st_folium
 from openai import OpenAI
 
-# 頁面基本配置
-st.set_page_config(page_title="日本自駕 AI 助手", layout="wide", page_icon="🚗")
+# 頁面配置
+st.set_page_config(page_title="沖繩 2025 團體旅程", layout="wide", page_icon="🌺")
 
-# --- 1. 初始化 OpenAI (從 Secrets 讀取) ---
-try:
-    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-except Exception:
-    st.warning("⚠️ 未檢測到 API Key。請在 Secrets 中設定 OPENAI_API_KEY 以啟用 AI 功能。")
-    client = None
+# 注入更柔和的 CSS 樣式
+st.markdown("""
+    <style>
+    .passenger-card {
+        background-color: #ffffff;
+        padding: 24px;
+        border-radius: 20px;
+        border: 1px solid #f0f2f6;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.03);
+        margin-bottom: 25px;
+    }
+    .driver-info-box {
+        background-color: #f1f3f9;
+        padding: 15px;
+        border-radius: 12px;
+        border-left: 5px solid #1e3c72;
+        margin-top: 15px;
+    }
+    .highlight-badge {
+        background-color: #ff4b4b;
+        color: white;
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 0.8em;
+        font-weight: bold;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-# --- 2. 資料讀取函式 ---
-def load_itinerary():
-    try:
-        with open('itinerary.json', 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        st.error("❌ 找不到 itinerary.json 檔案！")
-        return []
+# 初始化 OpenAI (從 Secrets)
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# --- 3. AI 生成亮點函式 ---
-def get_ai_tips(location):
-    if not client:
-        return "請先設定 OpenAI API Key。"
+def load_data():
+    with open('itinerary.json', 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+data = load_data()
+
+# --- 側邊欄：控制台 ---
+with st.sidebar:
+    st.header("⚙️ 設定")
+    # 關鍵功能：切換模式
+    is_driver_mode = st.toggle("🚀 開啟駕駛模式", value=False)
     
-    prompt = f"""
-    你是一位日本旅遊專家。請針對『{location}』提供：
-    1. 簡短景點介紹 (50字內)。
-    2. 點列式：必做、必吃、必睇、必打卡。
-    使用繁體中文，口吻要專業且具吸引力。
-    """
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        return f"AI 請求失敗: {str(e)}"
-
-# --- 4. UI 介面設計 ---
-st.title("🏝️ 沖繩自駕 AI 行程助手")
-st.markdown("📅 **2025年1月25日 - 1月28日** | 🚗 日本自駕專用版")
-
-data = load_itinerary()
-
-# 佈局：左側地圖，右側行程卡片
-col1, col2 = st.columns([1.2, 1])
-
-with col1:
-    st.subheader("🗺️ 路線預覽")
-    if data:
-        # 初始化地圖中心點
-        m = folium.Map(location=[26.4, 127.8], zoom_start=10, tiles="CartoDB positron")
-        
-        # 繪製景點標記與連線
-        coords = [[loc["lat"], loc["lng"]] for loc in data]
-        folium.PolyLine(coords, color="#318ce7", weight=4, opacity=0.7).add_to(m)
-        
-        for i, loc in enumerate(data):
-            folium.Marker(
-                [loc["lat"], loc["lng"]],
-                popup=f"Day {loc['day']}: {loc['name']}",
-                icon=folium.DivIcon(html=f"""<div style="font-family: sans-serif; color: white; background-color: #318ce7; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white;">{i+1}</div>""")
-            ).add_to(m)
-        
-        st_folium(m, width="100%", height=600)
-
-with col2:
-    st.subheader("📅 詳細行程")
+    st.divider()
+    st.markdown("### 👥 全團資訊")
+    st.write("成員：8 位 (2部車或大車)")
+    st.write("預算建議：每人準備 ¥45,000 現金")
     
+    if is_driver_mode:
+        st.warning("駕駛模式已開啟：顯示 Mapcode 與導航連結")
+
+# --- 主畫面 ---
+st.title("🌺 沖繩 2025 春之假期")
+st.write("2025年1月25日 - 1月28日 | 🌸 寒緋櫻賞櫻之旅")
+
+# 使用 Tabs 區分日期
+tab_titles = ["🗺️ 路線總覽"] + [f"🗓️ Day {i}" for i in range(1, 4)]
+tabs = st.tabs(tab_titles)
+
+# Tab 0: 乘客的地圖導覽
+with tabs[0]:
+    st.subheader("我們的旅程路線")
+    m = folium.Map(location=[26.4, 127.8], zoom_start=10, tiles="CartoDB positron")
+    coords = [[loc["lat"], loc["lng"]] for loc in data]
+    folium.PolyLine(coords, color="#ff4b4b", weight=3, opacity=0.6).add_to(m)
     for loc in data:
-        with st.expander(f"📍 Day {loc['day']}: {loc['name']}", expanded=True):
-            c1, c2 = st.columns([2, 1])
-            with c1:
-                st.write(f"💰 預估花費: **{loc['budget']}**")
-                # 模擬天氣
-                st.write("🌡️ 預報: 18°C ☀️ (適合自駕)")
-            with c2:
-                st.code(f"{loc['mapcode']}", language="markdown")
-                st.caption("點擊上方複製 Mapcode")
+        folium.Marker([loc["lat"], loc["lng"]], popup=loc["name"]).add_to(m)
+    st_folium(m, width="100%", height=450)
 
-            # AI 攻略按鈕
-            if st.button(f"✨ AI 生成「四必」清單", key=loc['name']):
-                with st.spinner("正在諮詢 AI 達人..."):
-                    tips = get_ai_tips(loc['name'])
-                    st.markdown(tips)
-            
-            # 導航跳轉
-            nav_url = f"https://www.google.com/maps/dir/?api=1&destination={loc['lat']},{loc['lng']}"
-            st.link_button("🚀 開啟 Google Maps 導航", nav_url)
+# Tab 1-3: 每日行程卡片
+for i in range(1, 4):
+    with tabs[i]:
+        day_locs = [l for l in data if l["day"] == i]
+        
+        for loc in day_locs:
+            with st.container():
+                # 使用乘客視角顯示卡片
+                st.markdown(f"""
+                <div class="passenger-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h2 style="margin:0;">📍 {loc['name']}</h2>
+                        <span class="highlight-badge">{loc['type']}</span>
+                    </div>
+                    <p style="color: #666; margin-top: 5px;">預計花費：{loc['budget']} | 🌡️ 預報：18°C 🌤️</p>
+                </div>
+                """, unsafe_allow_html=True)
 
-st.divider()
-st.info("💡 貼士：在日本開車請確保攜帶國際駕駛執照 (IDP) 以及護照正本。")
+                # AI 攻略按鈕 (全團都會感興趣)
+                if st.button(f"✨ 查看 {loc['name']} AI 必玩攻略", key=f"tourist_{loc['name']}"):
+                    with st.spinner("正在呼叫導遊小助手..."):
+                        prompt = f"請針對沖繩景點『{loc['name']}』，以活潑的語氣列出：必做、必吃名物、必睇景點、必打卡位。繁體中文。"
+                        res = client.chat.completions.create(model="gpt-4o", messages=[{"role": "user", "content": prompt}])
+                        st.info(res.choices[0].message.content)
+
+                # --- 駕駛模式隱藏內容 ---
+                if is_driver_mode:
+                    with st.container():
+                        st.markdown(f"""
+                        <div class="driver-info-box">
+                            <strong>🛠️ 司機專用資訊</strong><br/>
+                            📍 日本導航 Mapcode: <code>{loc['mapcode']}</code><br/>
+                            🛣️ 建議：檢查目的地是否有專屬停車場
+                        </div>
+                        """, unsafe_allow_html=True)
+                        st.link_button(f"🗺️ 開啟 Google Maps 導航至 {loc['name']}", 
+                                      f"https://www.google.com/maps/search/?api=1&query={loc['lat']},{loc['lng']}",
+                                      use_container_width=True)
+                
+                st.write("") # 增加間隔
